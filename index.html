@@ -1,0 +1,247 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Net0 by wangfakang</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <script src="javascripts/scale.fix.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1 class="header">Net0</h1>
+        <p class="header">访问web服务的整个过程</p>
+
+        <ul>
+          <li class="download"><a class="buttons" href="https://github.com/wangfakang/net0/zipball/master">Download ZIP</a></li>
+          <li class="download"><a class="buttons" href="https://github.com/wangfakang/net0/tarball/master">Download TAR</a></li>
+          <li><a class="buttons github" href="https://github.com/wangfakang/net0">View On GitHub</a></li>
+        </ul>
+
+        <p class="header">This project is maintained by <a class="header name" href="https://github.com/wangfakang">wangfakang</a></p>
+
+
+      </header>
+      <section>
+        <p><code>当在搜索框中输入map.baidu.com到响应的整个过程：</code></p>
+
+<h1>
+<a id="当在搜索框中输入mapbaiducom到响应的整个过程" class="anchor" href="#%E5%BD%93%E5%9C%A8%E6%90%9C%E7%B4%A2%E6%A1%86%E4%B8%AD%E8%BE%93%E5%85%A5mapbaiducom%E5%88%B0%E5%93%8D%E5%BA%94%E7%9A%84%E6%95%B4%E4%B8%AA%E8%BF%87%E7%A8%8B" aria-hidden="true"><span class="octicon octicon-link"></span></a>当在搜索框中输入map.baidu.com到响应的整个过程：</h1>
+
+<ul>
+<li>1：首先对其输入的域名解析解析（DNS）<br>
+[DNS 涉及到了一个DNS劫持技术：就是在进行域名解析的时候，通过修改域名对应的ip的值就可以使用户访问你设置的网站了]
+
+<ul>
+<li>1.1若本地有DNS缓存则直接取得对应的ip</li>
+<li>1.2若本地无DNS缓存<br>
+</li>
+</ul>
+</li>
+<li>2：若本地无DNS缓存则浏览器向本机DNS模块发送DNS请求<br>
+
+<ul>
+<li>注意当使用CDN加速的时候：</li>
+</ul>
+</li>
+</ul>
+
+<pre><code>对域名解析过程进行了调整，所以解析函数库一般得到的是该域名对应的CNAME记录，
+为了得到实际IP地址，浏览器需要再次对获得的CNAME域名进行解 析以得到实际的IP地址；在此过程中，使用的全
+局负载均衡DNS解析，如根据地理位置信息解析对应的IP地址，使得用户能就近访问。]   
+</code></pre>
+
+<ul>
+<li>3：DNS将生成的DNS报文传送给传输层的UDP协议单元<br>
+</li>
+<li>4：然后传输到网络层，在此添加了ip（注意是DNS服务器的ip）<br>
+</li>
+<li>5：到达数据链路层，此时需要使用ARP解析得到mac地址，若此时ARP缓存中没有与之对应的ip__mac映射，则要向此
+局域网发一个ARP广播。<br>
+
+<ul>
+<li>此处涉及到一个ARP欺骗技术：　　　</li>
+</ul>
+</li>
+</ul>
+
+<pre><code>ARP欺骗原理 我们先模拟一个环境： 网关：192.168.1.1 MAC地址：00:11:22:33:44:55 
+欺骗主机A：192.168.1.100 MAC地址：00:11:22:33:44:66 被欺骗主机B：192.168.1.50 MAC地址:00:11:22:33:44:77 欺骗
+主机A不停的发送ARP应答包给网关，告诉网关他是192.168.1.50主机B，这样网关就相信欺骗主机，并且在网关的ARP缓存表
+里就有 192.168.1.50 对应的MAC就是欺骗主机A的MAC地址00:11:22:33:44:66，网关真正发给主机B的流量就转发给主机A；
+另外主机A同时不停的向主机B发 送ARP请求，主机B相信主机A为网关，在主机B的缓存表里有一条记录为192.168.1.1对应
+00:11:22:33:44:66，这样主机B真正 发送给网关的数据流量就会转发到主机A；等于说主机A和网关之间的通讯就经过了主
+机A，主机A作为了一个中间人在彼此之间进行转发，这就是ARP欺骗。
+</code></pre>
+
+<ul>
+<li>6：若目标机器不在此局域网内，则要跳转到下一跳路由<br>
+</li>
+<li>7：当DNS服务器收到该数据包的时候，通过DNS服务器产生一个DNS响应报文，在此写回去<br>
+</li>
+<li>8:当期本地DNS模块收到DNS响应报文过后，把其写入本地DNS缓存<br>
+</li>
+<li>9：然后进行tcp的三次握手过程（首先浏览器向www.map.baidu.com发出tcp请求报文SYN）当完成了三次握手过后就
+进行http的发送了<br>
+
+<ul>
+<li>在三次握手的过程当中：</li>
+</ul>
+</li>
+</ul>
+
+<pre><code>     第一次首先发送一个SYN同步报文给对方，此时当服务器端收到SYN报文的时候服务器就回应
+     一个ACK/syn报文，最后客户端在此向服务器端回应一个ACK报文 才完成了整个三次握手过程。    
+     SYN Flood技术就是利用第二次握手的时候，由于在第二次握手的时候服务器端会去为该来分配一个TCB资源，
+     用于记录该半打开链接。（当server回应了SYN/ACK的时候在client端也会分配一个TCB资源，只有当一个连
+     接超时了才会去删除的，所以只要攻击端发送SYN报文的速度快于超时时间就可以耗尽server端的资源。正是
+     利用这种不平等的关系进行攻击的）        
+</code></pre>
+
+<ul>
+<li>
+<p>如何来解决： </p>
+
+<pre><code> 1：检测半打开半打开连接数      
+ 2：检测新连接速度     
+ 3：SYN  Cookie技术：就是在client与server之间使用防火墙作为代理。是client发送的syn时防火墙截取此SYN
+ 并模仿服务器进行回应（此时防火墙会先把ack序列号进行相关的加密计算cookie，最后防火墙根据client回应的
+ ack计算看与之是否匹配）     
+ 4：safte  Reset技术：当防火墙截取到了client的SYN的时候，通过回应与之client不期望的序列号从而client会
+ 发送rst报文，防火墙进行相应的cookie判断从而认定该client是可信的，之后client在此发送SYN当防火墙根据
+ cookie检测直接进行放行就ok了。此技术与SYN cookie技术相比要好的多。原因是此时防火墙相当于一个但向代理，
+ 后期的数据传输很快，不需要向SYN cookie哪种方式转发了    
+</code></pre>
+
+<ul>
+<li>10：浏览器发出http请求，然后通过后面的nginx进行相应的调度到相应的后台Apache上去，当Apache收到请求后会把其交给
+一个进程来处理<br>
+</li>
+</ul>
+</li>
+<li>nginx的worker进程的处理方式：　　</li>
+</ul>
+
+<pre><code>每个worker进程都是从master进程fork过来，在master进程里面，先建立好需要listen的socket（listenfd）之后， 然后
+再fork出多个worker进程。所有worker进程的listenfd会在新连接到来时变得可读，为保证只有一个进程处理该连接，所有
+worker进程在注册listenfd读事件前抢accept_mutex，抢到互斥锁的那个进程注册listenfd读事件，在读事件里调用 accept
+接受该连接。当一个worker进程在accept这个连接之后，就开始读取请求，解析请求，处理请求，产生数据后，再返回给客
+户端，最后才 断开连接，这样一个完整的请求就是这样的了。我们可以看到，一个请求，完全由worker进程来处理，而且只
+在一个worker进程中处理。
+</code></pre>
+
+<ul>
+<li>
+<p>11：当期处理完毕过后就要进行响应了(即服务器返回数据给浏览器)</p>
+
+<ul>
+<li>注意当使用CDN加速的时候：</li>
+</ul>
+</li>
+</ul>
+
+<pre><code>对域名解析过程进行了调整，所以解析函数库一般得到的是该域名对应的CNAME记录，为了得到实际IP地址，浏览器需要再
+次对获得的CNAME域名进行解 析以得到实际的IP地址；在此过程中，使用的全局负载均衡DNS解析，如根据地理位置信息解析
+对应的IP地址，使得用户能就近访问。
+</code></pre>
+
+<p>到这里为止相关处理过程就完了．</p>
+
+<h1>
+<a id="http请求返回状态码" class="anchor" href="#http%E8%AF%B7%E6%B1%82%E8%BF%94%E5%9B%9E%E7%8A%B6%E6%80%81%E7%A0%81" aria-hidden="true"><span class="octicon octicon-link"></span></a>Http请求返回状态码：　　</h1>
+
+<p>1xx 代表请求已被接受，需要继续处理．　　　　　　　　</p>
+
+<p>2xx 代表请求已成功被服务器接收、理解、并接受．</p>
+
+<p>3xx 这类状态码代表需要客户端采取进一步的操作才能完成请求．</p>
+
+<p>4xx 代表了客户端看起来可能发生了错误，妨碍了服务器的处理．</p>
+
+<p>5xx 代表了服务器在处理请求的过程中有错误或者异常状态发生, 无法完成请求．</p>
+
+<h1>
+<a id="相关字段的含义" class="anchor" href="#%E7%9B%B8%E5%85%B3%E5%AD%97%E6%AE%B5%E7%9A%84%E5%90%AB%E4%B9%89" aria-hidden="true"><span class="octicon octicon-link"></span></a>相关字段的含义：　</h1>
+
+<ul>
+<li>
+<p>请求头字段：　　　</p>
+
+<ul>
+<li><p>Accept：告诉web服务器自己接受什么样的类型．</p></li>
+<li><p>Cookie：是由服务器生成，发送给浏览器，浏览器会将此cookie保存在本地文件，下次再访问这个网站的时候就会发送这个
+cookie给server 不用授权了  保持了session状态．</p></li>
+<li><p>Refere：浏览器向 WEB 服务器表明自己是从哪个 网页/URL 获得/点击 当前请求的网址/URL．</p></li>
+</ul>
+</li>
+<li>
+<p>响应头字段：　　　　　</p>
+
+<ul>
+<li><p>Cache-Control：public(可以用 Cached 内容回应任何用户)　</p></li>
+<li><p>private（只能用缓存内容回应先前请求该内容的那个用户）</p></li>
+<li><p>no-cache（可以缓存，但是只有在跟WEB服务器验证了其有效后，才能返回给客户端）</p></li>
+<li><p>Content_Length：WEB 服务器告诉浏览器自己响应的对象的长度</p></li>
+<li><p>Date：表示消息发送的时间</p></li>
+<li><p>Expires：WEB服务器表明该实体将在什么时候过期，对于过期了的对象，只有在跟WEB服务器验证了其有效性后，
+才能用来响应客户请求</p></li>
+<li><p>Server: WEB 服务器表明自己是什么软件及版本等信息　　</p></li>
+</ul>
+</li>
+</ul>
+
+<p>　</p>
+
+<h1>
+<a id="欢迎一起交流学习-" class="anchor" href="#%E6%AC%A2%E8%BF%8E%E4%B8%80%E8%B5%B7%E4%BA%A4%E6%B5%81%E5%AD%A6%E4%B9%A0-" aria-hidden="true"><span class="octicon octicon-link"></span></a>欢迎一起交流学习 </h1>
+
+<p>在使用中有任何问题，欢迎反馈给我，可以用以下联系方式跟我交流</p>
+
+<ul>
+<li>邮件(1031379296#qq.com, 把#换成@)</li>
+<li>QQ: 1031379296</li>
+<li>weibo: <a href="http://weibo.com/u/2786211992/home">@王发康</a>
+</li>
+</ul>
+
+<h1>
+<a id="thx" class="anchor" href="#thx" aria-hidden="true"><span class="octicon octicon-link"></span></a>Thx</h1>
+
+<ul>
+<li>chunshengsterATgmail.com</li>
+</ul>
+
+<h1>
+<a id="author" class="anchor" href="#author" aria-hidden="true"><span class="octicon octicon-link"></span></a>Author</h1>
+
+<ul>
+<li>Linux\nginx\golang\c\c++爱好者</li>
+<li>欢迎一起交流  一起学习# </li>
+<li>Others say good and Others good</li>
+</ul>
+      </section>
+      <footer>
+        <p><small>Hosted on <a href="https://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
+      </footer>
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+		          <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("从浏览器输入url后的整个访问过程");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+  </body>
+</html>
